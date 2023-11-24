@@ -1,13 +1,11 @@
 import os
-import json
+import keyring
 import requests
 from PIL import Image, ImageDraw, ImageFont
 
 
-# Load credentials from json file
-with open('/Users/Shared/secrets.json') as f:
-    data = json.load(f)
-    api_token = 'Bearer ' + data['api_token']
+# Load credentials from keychain
+printer_api_key = 'Bearer ' + keyring.get_password("helpdesk_printer", "")
 
 
 def generate(spare_num):
@@ -15,18 +13,18 @@ def generate(spare_num):
     template_img = Image.open(os.path.join(
         os.path.dirname(__file__), 'assets/template.png'))
     draw = ImageDraw.Draw(template_img)
-    font_heading = ImageFont.truetype('assets/Arial Bold.ttf', size=245)
+    font_heading = ImageFont.truetype('assets/Arial Bold.ttf', size=172)
     # Add computer information to image
-    draw.text((44, 84), f'Spare {spare_num}',
+    draw.text((456, 175), f'Switch {spare_num}',
               font=font_heading, fill='black')
     # Save image to temporary file
     info_image_path = f'/tmp/tmp.upload-{spare_num}.png'
     template_img.save(info_image_path)
 
 
-def print(api_token, spare_num):
+def print(printer_api_key, spare_num):
     # Print image to network printer
-    headers = {'Authorization': f'{api_token}'}
+    headers = {'Authorization': f'{printer_api_key}'}
     files = {'file': open(f'/tmp/tmp.upload-{spare_num}.png', 'rb')}
     try:
         response = requests.post(
@@ -39,7 +37,7 @@ def print(api_token, spare_num):
     os.remove(f'/tmp/tmp.upload-{spare_num}.png')
 
 
-for i in range(13, 16):
-    spare_num = f"{i:02d}"
+for i in range(10, 11):
+    spare_num = f"{i}"
     generate(spare_num)
-    print(api_token, spare_num)
+    print(printer_api_key, spare_num)
