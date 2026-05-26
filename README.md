@@ -25,6 +25,12 @@ Print only the first configured label:
 go run ./... -limit 1
 ```
 
+Print a one-off label without editing `main.go`:
+
+```sh
+go run ./... -label "CRT 03"
+```
+
 Render a preview PNG without printing:
 
 ```sh

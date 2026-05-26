@@ -83,6 +83,9 @@ func run(args []string) error {
 	}
 
 	names := expandLabelSets(labels)
+	if len(cfg.labels) > 0 {
+		names = cfg.labels
+	}
 	if len(names) == 0 {
 		return errors.New("no labels configured")
 	}
@@ -114,6 +117,7 @@ type config struct {
 	limit       int
 	preview     bool
 	previewPath string
+	labels      []string
 }
 
 func loadConfig(args []string) (config, error) {
@@ -137,6 +141,7 @@ func loadConfig(args []string) (config, error) {
 	flags.IntVar(&cfg.limit, "limit", 0, "maximum labels to print; 0 prints all labels")
 	flags.BoolVar(&cfg.preview, "preview", false, "render the first label to a PNG instead of printing")
 	flags.StringVar(&cfg.previewPath, "preview-path", cfg.previewPath, "preview PNG path")
+	flags.Var((*labelFlags)(&cfg.labels), "label", "one-off label text; may be repeated")
 	if err := flags.Parse(args); err != nil {
 		return config{}, err
 	}
@@ -162,6 +167,24 @@ func env(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+type labelFlags []string
+
+func (f *labelFlags) String() string {
+	if f == nil {
+		return ""
+	}
+	return strings.Join(*f, ", ")
+}
+
+func (f *labelFlags) Set(value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return errors.New("label must not be empty")
+	}
+	*f = append(*f, value)
+	return nil
 }
 
 func names(values ...string) labelSet {

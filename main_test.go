@@ -23,6 +23,18 @@ func TestExpandLabelSetsExpandsNamesAndNumberedSeries(t *testing.T) {
 	}
 }
 
+func TestLoadConfigAcceptsOneOffLabels(t *testing.T) {
+	cfg, err := loadConfig([]string{"-label", "CRT 03", "-label", "CRT 04"})
+	if err != nil {
+		t.Fatalf("loadConfig: %v", err)
+	}
+	want := []string{"CRT 03", "CRT 04"}
+
+	if !reflect.DeepEqual(cfg.labels, want) {
+		t.Fatalf("cfg.labels = %#v, want %#v", cfg.labels, want)
+	}
+}
+
 func TestRenderNameLabelKeepsTemplateSize(t *testing.T) {
 	img, err := renderNameLabel("A deliberately long placeholder label")
 	if err != nil {
