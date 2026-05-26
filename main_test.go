@@ -35,6 +35,18 @@ func TestRenderNameLabelKeepsTemplateSize(t *testing.T) {
 	}
 }
 
+func TestRenderNameLabelUsesOpaqueWhiteBackground(t *testing.T) {
+	img, err := renderNameLabel("John Doe")
+	if err != nil {
+		t.Fatalf("renderNameLabel: %v", err)
+	}
+
+	r, g, b, a := img.At(0, 0).RGBA()
+	if r != 0xffff || g != 0xffff || b != 0xffff || a != 0xffff {
+		t.Fatalf("top-left pixel = rgba(%#x, %#x, %#x, %#x), want opaque white", r, g, b, a)
+	}
+}
+
 func TestBrotherPrinterClosesNetworkConnectionAfterPrint(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {

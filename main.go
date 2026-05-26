@@ -18,6 +18,7 @@ import (
 
 	brotherql "github.com/suapapa/go_brother-ql"
 	"golang.org/x/image/font"
+	"golang.org/x/image/font/gofont/gobold"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
@@ -48,10 +49,7 @@ const (
 //go:embed assets/template.png
 var templatePNG []byte
 
-//go:embed "assets/Arial Bold.ttf"
-var boldTTF []byte
-
-var boldFont = mustParseFont(boldTTF)
+var boldFont = mustParseFont(gobold.TTF)
 
 var labels = []labelSet{
 	names("mylife 1", "mylife 2"),
@@ -276,7 +274,8 @@ func renderNameLabel(name string) (image.Image, error) {
 	}
 
 	canvas := image.NewRGBA(image.Rect(0, 0, labelWidth, labelHeight))
-	draw.Draw(canvas, canvas.Bounds(), base, image.Point{}, draw.Src)
+	draw.Draw(canvas, canvas.Bounds(), image.White, image.Point{}, draw.Src)
+	draw.Draw(canvas, canvas.Bounds(), base, image.Point{}, draw.Over)
 
 	face, err := fittingFace(name)
 	if err != nil {
