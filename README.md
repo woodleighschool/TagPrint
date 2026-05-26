@@ -1,40 +1,42 @@
 # TagPrint
 
 Ad hoc nametag printer for the Brother QL-820NWB. It uses the same direct
-network-printer path as `freshservice-label`, but keeps the labels in code so
-you can edit the list, run it, and get stock out of the printer.
+network-printer path as `freshservice-label`, with labels supplied at runtime.
 
-Edit `labels` in `main.go`:
-
-```go
-var labels = []labelSet{
-	names("John Doe", "Joe Doe"),
-	numbered("Spare", 1, 6),
-}
-```
-
-Print all configured labels:
+Print one or more literal labels:
 
 ```sh
-go run ./...
+go run ./... -label "John Doe" -label "Joe Doe"
 ```
 
-Print only the first configured label:
+Print an incrementing series:
 
 ```sh
-go run ./... -limit 1
+go run ./... -series "Spare 1..6"
 ```
 
-Print a one-off label without editing `main.go`:
+Series keep the padding you type:
 
 ```sh
-go run ./... -label "CRT 03"
+go run ./... -series "CRT 03..08"
+```
+
+You can combine literal labels and series:
+
+```sh
+go run ./... -label "John Doe" -series "Spare 1..6"
+```
+
+Print only the first requested label:
+
+```sh
+go run ./... -series "CRT 03..08" -limit 1
 ```
 
 Render a preview PNG without printing:
 
 ```sh
-go run ./... -preview
+go run ./... -label "CRT 03" -preview
 ```
 
 `PRINTER_ADDR` defaults to `172.19.10.13`, matching the deployed

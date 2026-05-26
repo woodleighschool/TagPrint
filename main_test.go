@@ -11,27 +11,43 @@ import (
 	"time"
 )
 
-func TestExpandLabelSetsExpandsNamesAndNumberedSeries(t *testing.T) {
-	got := expandLabelSets([]labelSet{
-		names("John Doe", "Joe Doe"),
-		numbered("Spare", 1, 3),
-	})
-	want := []string{"John Doe", "Joe Doe", "Spare 1", "Spare 2", "Spare 3"}
+func TestRequestedLabelsExpandsLabelsAndSeries(t *testing.T) {
+	cfg := config{
+		labels: []string{"John Doe", "Joe Doe"},
+		series: []string{"Spare 1..3", "CRT 03..04"},
+	}
+
+	got, err := requestedLabels(cfg)
+	if err != nil {
+		t.Fatalf("requestedLabels: %v", err)
+	}
+	want := []string{"John Doe", "Joe Doe", "Spare 1", "Spare 2", "Spare 3", "CRT 03", "CRT 04"}
 
 	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("expandLabelSets() = %#v, want %#v", got, want)
+		t.Fatalf("requestedLabels() = %#v, want %#v", got, want)
 	}
 }
 
-func TestLoadConfigAcceptsOneOffLabels(t *testing.T) {
-	cfg, err := loadConfig([]string{"-label", "CRT 03", "-label", "CRT 04"})
+func TestRequestedLabelsRequiresAtLeastOneArgBasedLabel(t *testing.T) {
+	_, err := requestedLabels(config{})
+	if err == nil {
+		t.Fatalf("requestedLabels() error = nil, want error")
+	}
+}
+
+func TestLoadConfigAcceptsArgBasedLabels(t *testing.T) {
+	cfg, err := loadConfig([]string{"-label", "CRT 03", "-label", "CRT 04", "-series", "Spare 1..2"})
 	if err != nil {
 		t.Fatalf("loadConfig: %v", err)
 	}
-	want := []string{"CRT 03", "CRT 04"}
+	wantLabels := []string{"CRT 03", "CRT 04"}
+	wantSeries := []string{"Spare 1..2"}
 
-	if !reflect.DeepEqual(cfg.labels, want) {
-		t.Fatalf("cfg.labels = %#v, want %#v", cfg.labels, want)
+	if !reflect.DeepEqual(cfg.labels, wantLabels) {
+		t.Fatalf("cfg.labels = %#v, want %#v", cfg.labels, wantLabels)
+	}
+	if !reflect.DeepEqual(cfg.series, wantSeries) {
+		t.Fatalf("cfg.series = %#v, want %#v", cfg.series, wantSeries)
 	}
 }
 

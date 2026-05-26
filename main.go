@@ -12,6 +12,7 @@ import (
 	"image/png"
 	"log/slog"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -51,18 +52,7 @@ var templatePNG []byte
 
 var boldFont = mustParseFont(gobold.TTF)
 
-var labels = []labelSet{
-	names("mylife 1", "mylife 2"),
-	// numbered("Spare", 1, 6),
-	// names("John Doe", "Joe Doe"),
-}
-
-type labelSet struct {
-	values []string
-	prefix string
-	start  int
-	end    int
-}
+var seriesPattern = regexp.MustCompile(`^(.*?)(\d+)\.\.(\d+)$`)
 
 type BrotherPrinter struct {
 	addr    string
@@ -82,12 +72,9 @@ func run(args []string) error {
 		return err
 	}
 
-	names := expandLabelSets(labels)
-	if len(cfg.labels) > 0 {
-		names = cfg.labels
-	}
-	if len(names) == 0 {
-		return errors.New("no labels configured")
+	names, err := requestedLabels(cfg)
+	if err != nil {
+		return err
 	}
 	if cfg.limit > 0 && cfg.limit < len(names) {
 		names = names[:cfg.limit]
@@ -118,6 +105,7 @@ type config struct {
 	preview     bool
 	previewPath string
 	labels      []string
+	series      []string
 }
 
 func loadConfig(args []string) (config, error) {
@@ -142,6 +130,7 @@ func loadConfig(args []string) (config, error) {
 	flags.BoolVar(&cfg.preview, "preview", false, "render the first label to a PNG instead of printing")
 	flags.StringVar(&cfg.previewPath, "preview-path", cfg.previewPath, "preview PNG path")
 	flags.Var((*labelFlags)(&cfg.labels), "label", "one-off label text; may be repeated")
+	flags.Var((*labelFlags)(&cfg.series), "series", `numbered label series, such as "Spare 1..6" or "CRT 03..08"; may be repeated`)
 	if err := flags.Parse(args); err != nil {
 		return config{}, err
 	}
@@ -187,39 +176,58 @@ func (f *labelFlags) Set(value string) error {
 	return nil
 }
 
-func names(values ...string) labelSet {
-	return labelSet{values: append([]string(nil), values...)}
+func requestedLabels(cfg config) ([]string, error) {
+	requested := append([]string(nil), cfg.labels...)
+	for _, spec := range cfg.series {
+		expanded, err := expandSeries(spec)
+		if err != nil {
+			return nil, err
+		}
+		requested = append(requested, expanded...)
+	}
+	if len(requested) == 0 {
+		return nil, errors.New("at least one -label or -series is required")
+	}
+	return requested, nil
 }
 
-func numbered(prefix string, start, end int) labelSet {
-	return labelSet{prefix: prefix, start: start, end: end}
-}
+func expandSeries(spec string) ([]string, error) {
+	matches := seriesPattern.FindStringSubmatch(strings.TrimSpace(spec))
+	if matches == nil {
+		return nil, fmt.Errorf("series %q must look like \"Spare 1..6\" or \"CRT 03..08\"", spec)
+	}
 
-func expandLabelSets(sets []labelSet) []string {
-	var expanded []string
-	for _, set := range sets {
-		for _, value := range set.values {
-			value = strings.TrimSpace(value)
-			if value != "" {
-				expanded = append(expanded, value)
-			}
-		}
-		if set.prefix == "" {
-			continue
-		}
+	prefix := matches[1]
+	startText := matches[2]
+	endText := matches[3]
 
-		step := 1
-		if set.end < set.start {
-			step = -1
-		}
-		for i := set.start; ; i += step {
-			expanded = append(expanded, strings.TrimSpace(set.prefix+" "+strconv.Itoa(i)))
-			if i == set.end {
-				break
-			}
+	start, err := strconv.Atoi(startText)
+	if err != nil {
+		return nil, fmt.Errorf("parse series start %q: %w", startText, err)
+	}
+	end, err := strconv.Atoi(endText)
+	if err != nil {
+		return nil, fmt.Errorf("parse series end %q: %w", endText, err)
+	}
+
+	width := len(startText)
+	if len(endText) > width {
+		width = len(endText)
+	}
+
+	step := 1
+	if end < start {
+		step = -1
+	}
+
+	var labels []string
+	for i := start; ; i += step {
+		labels = append(labels, prefix+fmt.Sprintf("%0*d", width, i))
+		if i == end {
+			break
 		}
 	}
-	return expanded
+	return labels, nil
 }
 
 func writePreview(path, name string) error {
