@@ -1,9 +1,9 @@
 module github.com/woodleighschool/tagprint
 
-go 1.26.0
+go 1.27.0
 
 require (
-	github.com/suapapa/go_brother-ql v0.2.1
+	github.com/suapapa/go_brother-ql v0.2.2
 	golang.org/x/image v0.46.0
 )
 
