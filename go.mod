@@ -4,12 +4,12 @@ go 1.27.0
 
 require (
 	github.com/suapapa/go_brother-ql v0.2.2
-	golang.org/x/image v0.46.0
+	golang.org/x/image v0.47.0
 )
 
 require (
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/lestrrat-go/dither v0.0.0-20180426220553-2a6e1152a49e // indirect
-	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 )
